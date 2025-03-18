@@ -13,3 +13,11 @@ app.get('/ping', (req, res) => {
 app.get('/tic', (req, res) => {
   res.send('teg');
 });
+
+app.get('/abc', (req, res) => {
+  res.send('def');
+});
+
+app.get('/user', (req, res) => {
+  res.send('users');
+});
