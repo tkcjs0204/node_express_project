@@ -1,83 +1,12 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 const PORT = 3000;
 
-app.listen(PORT, () => {
-  console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
-});
+const cors = require('cors');
+app.use(cors());
 
-app.get('/ping', (req, res) => {
-  res.send('pong');
-});
-
-app.get('/tic', (req, res) => {
-  res.send('teg');
-});
-
-app.get('/abc', (req, res) => {
-  res.send('def');
-});
-
-app.get("/users", (req, res) => {
-  res.json(users);
-});
-
-app.get("/test", (req, res) => {
-  console.log(req.query);
-  res.json(ok);
-});
-
-console.log()
-
-
-app.get('/articles' , (req, res) => {
-  console.log(req.query);
-});
-
-
-
-app.listen(PORT, () => {
-  console.log(`서버 실행 중: http://localhost:${PORT}`);
-});
-
-  
-app.get("/ping", (req, res) => res.send("pong"));
-app.get("/tic", (req, res) => res.send("teg"));
-app.get("/abc", (req, res) => res.send("def"));
-
-
-app.get("/users", (req, res) => {
-  res.json(users);
-});
-
-
-app.get("/articles", (req, res) => {
-  res.json(articles);
-});
-
-
-app.get("/users/:id", (req, res) => {
-  const user = users.find(u => u.id === parseInt(req.params.id));
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
-});
-
-
-app.get("/articles/:id", (req, res) => {
-  const article = articles.find(a => a.id === parseInt(req.params.id));
-  if (!article) return res.status(404).json({ error: "Article not found" });
-  res.json(article);
-});
-
-
-
-
-
-
-
-
-
-
+// ✅ JSON 데이터를 다루기 위한 미들웨어 추가
+app.use(express.json());
 
 const users =  [
   {
@@ -140,8 +69,7 @@ const users =  [
     "email": "choi2@example.com",
     "signup_date": "2022-04-09T20:00:00Z"
   }
-]
-
+];
 
 const articles = [
   {
@@ -214,6 +142,93 @@ const articles = [
     "author_id": 10,
     "date": "2025-03-09T20:00:00Z"
   }
-]
+];
+
+// 서버 확인용
+app.get("/", (req, res) => {
+  res.send("서버가 정상적으로 실행 중입니다!");
+});
+
+app.listen(PORT, () => {
+  console.log(`서버 실행 중: http://localhost:${PORT}`);
+});
+
+// 모든 사용자 목록 조회
+app.get("/users", (req, res) => {
+  res.json(users);
+});
+
+// 특정 사용자 조회
+app.get("/users/:id", (req, res) => {
+  const user = users.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
+});
+
+// 모든 게시글 목록 조회
+app.get("/articles", (req, res) => {
+  res.json(articles);
+});
+
+// 특정 게시글 조회
+app.get("/articles/:id", (req, res) => {
+  const article = articles.find(a => a.id === parseInt(req.params.id));
+  if (!article) return res.status(404).json({ error: "Article not found" });
+  res.json(article);
+});
+
+// 게시글 생성 (POST /articles)
+app.post("/articles", (req, res) => {
+  const { title, content, author_id } = req.body;
+
+  if (!author_id) {
+    return res.status(400).json({ error: "Author ID is required" });
+  }
+
+  // 유효한 user_id인지 확인
+  const user = users.find(u => u.id === parseInt(author_id));
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const newArticle = {
+    id: articles.length + 1, // 새 게시글 ID는 기존 게시글 수 + 1
+    title,
+    content,
+    author_id,
+    date: new Date().toISOString(),
+  };
+  articles.push(newArticle); // 새 게시글을 배열에 추가
+  res.status(201).json({
+    message: "Article created successfully",
+    article: newArticle,
+  });
+});
+
+// 게시글 수정 (PUT /articles/:id)
+app.put("/articles/:id", (req, res) => {
+  const article = articles.find(a => a.id === parseInt(req.params.id));
+  if (!article) return res.status(404).json({ error: "Article not found" });
+
+  const { title, content, author_id } = req.body;
+  article.title = title || article.title; // 수정된 제목
+  article.content = content || article.content; // 수정된 내용
+  article.author_id = author_id || article.author_id; // 수정된 작성자 ID (없으면 기존 값 유지)
+  article.date = new Date().toISOString(); // 수정된 날짜 업데이트
+
+  res.json({
+    message: "Article updated successfully",
+    article,
+  });
+});
+
+// 게시글 삭제 (DELETE /articles/:id)
+app.delete("/articles/:id", (req, res) => {
+  const articleIndex = articles.findIndex(a => a.id === parseInt(req.params.id));
+  if (articleIndex === -1) return res.status(404).json({ error: "Article not found" });
+
+  articles.splice(articleIndex, 1); // 게시글 삭제
+  res.json({ message: "Article deleted successfully" });
+});
 
 
