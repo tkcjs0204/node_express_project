@@ -3,309 +3,101 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="게시글 관리 시스템">
+    <meta name="keywords" content="게시판, 게시글, 커뮤니티">
+    <meta name="author" content="게시판 관리자">
     <title>게시글 관리</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f9;
-      }
-      header {
-        background-color: #333;
-        color: white;
-        padding: 15px;
-        text-align: center;
-      }
-      .container {
-        width: 80%;
-        margin: 20px auto;
-      }
-      .form-group {
-        margin-bottom: 15px;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      input, textarea {
-        width: 100%;
-        padding: 10px;
-        margin: 5px 0;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-      }
-      button {
-        padding: 10px 20px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #45a049;
-      }
-      .articles {
-        margin-top: 30px;
-      }
-      .article {
-        background-color: #fff;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .article h3 {
-        margin-top: 0;
-      }
-      .article p {
-        color: #555;
-      }
-      .delete-btn {
-        background-color: #f44336;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        cursor: pointer;
-        border-radius: 4px;
-      }
-      .delete-btn:hover {
-        background-color: #e53935;
-      }
-      .alert {
-        padding: 10px;
-        margin: 20px 0;
-        background-color: #f4f4f9;
-        border-radius: 4px;
-        color: #333;
-        border: 1px solid #ccc;
-      }
-      .alert.success {
-        background-color: #d4edda;
-        color: #155724;
-        border-color: #c3e6cb;
-      }
-      .alert.error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-color: #f5c6cb;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="http://localhost:3000">
   </head>
   <body>
     <header>
-      <h1>게시글 관리</h1>
+      <h1>게시판</h1>
+      <nav>
+        <div class="user-section">
+          <span id="user-info" class="hidden"></span>
+          <button id="logout-btn" class="btn hidden">로그아웃</button>
+          <button id="toggle-auth" class="btn">로그인/회원가입</button>
+        </div>
+      </nav>
     </header>
 
-    <div class="container">
-      <div id="message" class="alert" style="display: none;"></div>
+    <main class="container">
+      <div id="message" class="alert" role="alert" style="display: none;"></div>
 
-      <h2>새 게시글 작성</h2>
-      <form id="articleForm">
-        <div class="form-group">
-          <label for="title">제목</label>
-          <input type="text" id="title" name="title" required>
-        </div>
-        <div class="form-group">
-          <label for="content">내용</label>
-          <textarea id="content" name="content" rows="4" required></textarea>
-        </div>
-        <div class="form-group">
-          <label for="author_id">작성자 ID</label>
-          <input type="number" id="author_id" name="author_id" required>
-        </div>
-        <button type="submit">게시글 업로드</button>
-      </form>
+      <section aria-labelledby="new-post-title">
+        <h2 id="new-post-title">새 게시글 작성</h2>
+        <form id="articleForm" novalidate>
+          <div class="form-group">
+            <label for="title">제목</label>
+            <input type="text" id="title" name="title" required aria-required="true">
+          </div>
+          <div class="form-group">
+            <label for="content">내용</label>
+            <textarea id="content" name="content" rows="4" required aria-required="true"></textarea>
+          </div>
+          <button type="submit">게시글 업로드</button>
+        </form>
+      </section>
 
-      <h2>로그인</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="loginEmail">이메일</label>
-          <input type="email" id="loginEmail" name="email" required>
+      <div id="auth-panel" class="hidden" role="dialog" aria-labelledby="auth-title">
+        <button id="close-auth" aria-label="패널 닫기">&times;</button>
+        <h2 id="auth-title">로그인 / 회원가입</h2>
+        <div id="login-form">
+          <h3>로그인</h3>
+          <form id="loginForm" novalidate>
+            <div class="form-group">
+              <label for="login-username">이메일</label>
+              <input type="email" id="login-username" name="username" placeholder="이메일을 입력하세요" required>
+            </div>
+            <div class="form-group">
+              <label for="login-password">비밀번호</label>
+              <input type="password" id="login-password" name="password" placeholder="비밀번호를 입력하세요" required>
+            </div>
+            <button type="submit" id="login-btn">로그인</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="loginPassword">비밀번호</label>
-          <input type="password" id="loginPassword" name="password" required>
+        <div id="signup-form">
+          <h3>회원가입</h3>
+          <form id="signupForm" novalidate>
+            <div class="form-group">
+              <label for="signup-username">이메일</label>
+              <input type="email" id="signup-username" name="username" placeholder="이메일을 입력하세요" required>
+            </div>
+            <div class="form-group">
+              <label for="signup-password">비밀번호</label>
+              <input type="password" id="signup-password" name="password" placeholder="비밀번호를 입력하세요" required>
+            </div>
+            <button type="submit" id="signup-btn">회원가입</button>
+          </form>
         </div>
-        <button type="submit">로그인</button>
-      </form>
-
-      <h2>회원가입</h2>
-      <form id="signupForm">
-        <div class="form-group">
-          <label for="signupEmail">이메일</label>
-          <input type="email" id="signupEmail" name="email" required>
-        </div>
-        <div class="form-group">
-          <label for="signupPassword">비밀번호</label>
-          <input type="password" id="signupPassword" name="password" required>
-        </div>
-        <button type="submit">회원가입</button>
-      </form>
-
-      <h2>게시글 목록</h2>
-      <div id="articlesList"></div>
       </div>
 
-    <script>
-      const apiUrl = 'http://localhost:3000/articles'; // API URL 설정
-      const articleForm = document.getElementById('articleForm');
-      const loginForm = document.getElementById('loginForm');
-      const signupForm = document.getElementById('signupForm');
-      const messageDiv = document.getElementById('message');
-      const articlesList = document.getElementById('articlesList');
+      <section aria-labelledby="articles-title">
+        <h2 id="articles-title">게시글 목록</h2>
+        <div id="articlesList" role="feed"></div>
+      </section>
+    </main>
 
-      // 게시글 목록 조회
-      async function fetchArticles() {
-        try {
-          const response = await fetch(apiUrl);
-          const articles = await response.json();
-          displayArticles(articles);
-        } catch (error) {
-          console.error('Error fetching articles:', error);
-        }
-      }
+    <!-- 수정 모달 -->
+    <div id="edit-modal" class="modal hidden">
+      <div class="modal-content">
+        <button id="close-edit" aria-label="수정 모달 닫기">&times;</button>
+        <h2>게시글 수정</h2>
+        <form id="edit-form" novalidate>
+          <div class="form-group">
+            <label for="edit-title">제목</label>
+            <input type="text" id="edit-title" name="title" required aria-required="true">
+          </div>
+          <div class="form-group">
+            <label for="edit-content">내용</label>
+            <textarea id="edit-content" name="content" rows="4" required aria-required="true"></textarea>
+          </div>
+          <button type="submit">수정 완료</button>
+        </form>
+      </div>
+    </div>
 
-      // 게시글 출력 함수
-      function displayArticles(articles) {
-        articlesList.innerHTML = ''; // 기존 게시글 목록 초기화
-        articles.forEach(article => {
-          const articleDiv = document.createElement('div');
-          articleDiv.classList.add('article');
-          articleDiv.setAttribute('data-id', article.id);
-          articleDiv.innerHTML = `
-            <h3>${article.title}</h3>
-            <p>${article.content}</p>
-            <p><strong>작성자 ID:</strong> ${article.author_id}</p>
-            <p><strong>작성일:</strong> ${new Date(article.date).toLocaleString()}</p>
-            <button class="delete-btn" onclick="deleteArticle(${article.id})">삭제</button>
-            <button class="delete-btn" onclick="editArticle(${article.id})">수정</button>
-          `;
-          articlesList.appendChild(articleDiv);
-        });
-      }
-
-      // 게시글 업로드
-      articleForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const title = document.getElementById('title').value;
-        const content = document.getElementById('content').value;
-        const author_id = document.getElementById('author_id').value;
-
-        const newArticle = { title, content, author_id };
-
-        try {
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newArticle)
-          });
-
-          const result = await response.json();
-          if (response.ok) {
-            displayMessage('게시글이 성공적으로 업로드되었습니다.', 'success');
-            fetchArticles(); // 게시글 목록 새로고침
-            articleForm.reset(); // 폼 초기화
-          } else {
-            displayMessage(result.error, 'error');
-          }
-        } catch (error) {
-          console.error('Error creating article:', error);
-          displayMessage('게시글 업로드에 실패했습니다.', 'error');
-        }
-      });
-
-      // 게시글 삭제
-      async function deleteArticle(id) {
-        try {
-          const response = await fetch(`${apiUrl}/${id}`, {
-            method: 'DELETE'
-          });
-
-          const result = await response.json();
-          if (response.ok) {
-            displayMessage('게시글이 삭제되었습니다.', 'success');
-            fetchArticles(); // 게시글 목록 새로고침
-          } else {
-            displayMessage(result.error, 'error');
-          }
-        } catch (error) {
-          console.error('Error deleting article:', error);
-          displayMessage('게시글 삭제에 실패했습니다.', 'error');
-        }
-      }
-
-      // 로그인
-      loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-
-        try {
-          const response = await fetch('http://localhost:3000/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-          });
-
-          const result = await response.json();
-          if (response.ok) {
-            displayMessage('로그인 성공!', 'success');
-            localStorage.setItem("token", result.token); // 토큰 저장
-          } else {
-            displayMessage(result.error, 'error');
-          }
-        } catch (error) {
-          console.error('Login error:', error);
-          displayMessage('로그인에 실패했습니다.', 'error');
-        }
-      });
-
-      // 회원가입
-      signupForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-
-        try {
-          const response = await fetch('http://localhost:3000/signup', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-          });
-
-          const result = await response.json();
-          if (response.ok) {
-            displayMessage('회원가입 성공!', 'success');
-          } else {
-            displayMessage(result.error, 'error');
-          }
-        } catch (error) {
-          console.error('Signup error:', error);
-          displayMessage('회원가입에 실패했습니다.', 'error');
-        }
-      });
-
-      // 메시지 표시 함수
-      function displayMessage(message, type) {
-        messageDiv.style.display = 'block';
-        messageDiv.textContent = message;
-        messageDiv.className = `alert ${type}`;
-      }
-
-      // 초기화 및 게시글 목록 조회
-      fetchArticles();
-    </script>
+    <script src="script.js" defer></script>
   </body>
 </html>

@@ -1,53 +1,83 @@
 const sqlite3 = require('sqlite3').verbose();
 
 // SQLite DB 연결
-const db = new sqlite3.Database('./database.db');
+const db = new sqlite3.Database('./database.db', (err) => {
+  if (err) return console.error("DB 연결 에러:", err.message);
+  console.log('✅ DB 연결 성공');
 
-// 테이블 준비 함수
-function initDB() {
-  db.serialize(() => {
-    // articles 테이블 생성
-    db.run(`
-      CREATE TABLE IF NOT EXISTS articles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        content TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `, (err) => {
-      if (err) {
-        console.error("테이블 생성 에러:", err);
-      } else {
-        console.log("테이블 준비 완료(articles)");
-      }
-    });
+  // 외래키 제약 조건 활성화
+  db.run("PRAGMA foreign_keys = ON");
+});
 
-    // users 테이블 생성
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `, (err) => {
-      if (err) {
-        console.error('테이블 생성 실패:', err);
-      } else {
-        console.log('users 테이블 생성 완료');
-      }
-    });
-  });
-
-  // 모든 작업이 끝난 후 데이터베이스 연결 종료
-  db.close((err) => {
+// users 테이블 생성
+function initUsersTable() {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
     if (err) {
-      console.error("DB 닫기 실패:", err);
+      console.error("❌ users 테이블 생성 에러:", err);
     } else {
-      console.log("DB 연결 종료");
+      console.log("✅ 테이블 준비 완료 (users)");
     }
   });
 }
 
-// 함수 실행
-initDB();
+// articles 테이블 생성
+function initArticlesTable() {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS articles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `, (err) => {
+    if (err) {
+      console.error("❌ articles 테이블 생성 에러:", err);
+    } else {
+      console.log("✅ 테이블 준비 완료 (articles)");
+    }
+  });
+}
+
+// comments 테이블 생성
+function initCommentsTable() {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      article_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `, (err) => {
+    if (err) {
+      console.error("❌ comments 테이블 생성 에러:", err);
+    } else {
+      console.log("✅ 테이블 준비 완료 (comments)");
+    }
+  });
+}
+
+// 모든 테이블 초기화 실행
+initUsersTable();
+initArticlesTable();
+initCommentsTable();
+
+// DB 연결 종료
+db.close((err) => {
+  if (err) {
+    console.error("❌ DB 연결 종료 에러:", err);
+  } else {
+    console.log("✅ DB 연결 종료");
+  }
+});
