@@ -1,6 +1,15 @@
 const express = require("express");
 const app = express();
 const PORT = 3000;
+const jwt = require('jsonwebtoken');
+const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
+
+app.use(express.json());
+// 데이터베이스 연결
+const db = new sqlite3.Database('./database.db');
+
+
 
 const cors = require('cors');
 app.use(cors());
@@ -231,4 +240,126 @@ app.delete("/articles/:id", (req, res) => {
   res.json({ message: "Article deleted successfully" });
 });
 
+app.post('/users', async (req, res) => {
+  const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ error: '이메일과 비밀번호를 입력해주세요.' });
+  }
+
+  // 이메일 중복 확인
+  const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
+  db.get(checkEmailQuery, [email], (err, row) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: '이메일 중복 확인 실패' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ error: '이메일이 이미 존재합니다.' });
+    }
+
+    // 비밀번호 해싱
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: '비밀번호 해싱 실패' });
+      }
+
+      const query = 'INSERT INTO users (email, password) VALUES (?, ?)';
+      db.run(query, [email, hashedPassword], function (err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: '회원가입 실패' });
+        }
+        res.status(200).json({ message: '회원가입 성공' });
+      });
+    });
+  });
+});
+
+
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: '이메일과 비밀번호는 필수입니다.' });
+  }
+
+  const sql = 'SELECT * FROM users WHERE email = ?';
+  db.get(sql, [email], async (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: '로그인 중 오류가 발생했습니다.' });
+    }
+    if (!user) {
+      return res.status(404).json({ error: '이메일이 없습니다.' });
+    }
+
+    // 비밀번호 비교
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: '패스워드가 틀립니다.' });
+    }
+
+    // JWT 토큰 생성
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      'your_secret_key',
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({
+      message: '로그인 성공',
+      token: token, // 클라이언트는 이 토큰을 저장하고 요청에 사용
+    });
+  });
+});
+
+// 회원가입 처리 (POST /signup)
+app.post('/signup', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: '이메일과 비밀번호를 입력해주세요.' });
+  }
+
+  // 이메일 중복 확인
+  const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
+  db.get(checkEmailQuery, [email], (err, row) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: '이메일 중복 확인 실패' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ error: '이메일이 이미 존재합니다.' });
+    }
+
+    // 비밀번호 해싱
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: '비밀번호 해싱 실패' });
+      }
+
+      const query = 'INSERT INTO users (email, password) VALUES (?, ?)';
+      db.run(query, [email, hashedPassword], function (err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: '회원가입 실패' });
+        }
+        res.status(200).json({ message: '회원가입 성공' });
+      });
+    });
+  });
+});
+
+
+
+
+// 에러 핸들링 미들웨어
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
+});
